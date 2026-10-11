@@ -302,6 +302,7 @@ run dictation-field-test   Tinycast/Features/Dictation/Model/DictationModel.swif
                            Tinycast/Features/Dictation/Model/DictationDestination.swift \
                            Tinycast/Features/Dictation/Model/DictationTextFormatter.swift \
                            Tinycast/Features/Dictation/Service/DictationCoordinator.swift \
+                           Tinycast/Features/Dictation/Service/DictationChimePlayer.swift \
                            Tinycast/Features/Dictation/Service/DictationInsertionContext.swift \
                            Tinycast/Features/AI/UI/ChatComposerTextView.swift \
                            Tinycast/Features/TextInjection/Service/*.swift \
@@ -312,6 +313,7 @@ run dictation-field-test   Tinycast/Features/Dictation/Model/DictationModel.swif
 run dictation-volume-test  Tinycast/Features/Dictation/Model/DictationVolumeSnapshot.swift \
                            Tinycast/Features/Dictation/Service/DictationAudioDucker.swift \
                            Tinycast/Platform/AppPaths.swift
+run dictation-chime-test   Tinycast/Features/Dictation/Service/DictationChimePlayer.swift
 run index -O dictation-performance Tinycast/Platform/ProcessExit.swift \
                            Tinycast/Features/Dictation/Model/DictationModel.swift \
                            Tinycast/Features/Dictation/Service/DictationWire.swift
