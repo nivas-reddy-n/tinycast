@@ -8,45 +8,98 @@ final class DictationDisplayState {
     enum Phase { case listening, transcribing }
     var phase: Phase = .listening
     var levels = [Float](repeating: 0, count: DictationSpectrum.barCount)
+    var startedAt = Date()
+    @ObservationIgnored var onCancel: (() -> Void)?
 }
 
 private struct DictationWaveform: View {
     let levels: [Float]
-    let processing: Bool
 
     var body: some View {
         HStack(alignment: .center, spacing: Theme.Spacing.dictationWaveGap) {
             ForEach(levels.indices, id: \.self) { index in
-                let emphasis =
-                    processing
-                    ? Double(levels[index])
-                    : min(1, Double(min(index, levels.count - 1 - index)) / 3)
+                let emphasis = min(1, Double(min(index, levels.count - 1 - index)) / 3)
                 Capsule()
                     .fill(Theme.Colors.textPrimary.opacity(0.4 + 0.6 * emphasis))
                     .frame(
                         width: Theme.Size.dictationWaveBar,
-                        height: 3 + (processing ? 9 : 25) * CGFloat(levels[index]))
+                        height: 3 + 25 * CGFloat(levels[index]))
             }
         }
         .animation(.easeOut(duration: 0.06), value: levels)
     }
 }
 
-private struct DictationProcessingWave: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var startedAt = Date()
+private struct DictationCancelButton: View {
+    let state: DictationDisplayState
+    @State private var hovered = false
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
-            let progress =
-                timeline.date.timeIntervalSince(startedAt)
-                .truncatingRemainder(dividingBy: 1.2) / 1.2
-            let center = (reduceMotion ? 0.5 : progress) * 28 - 4
-            DictationWaveform(
-                levels: (0..<DictationSpectrum.barCount).map { index in
-                    Float(max(0, 1 - abs(Double(index) - center) / 4))
-                }, processing: true)
+        Button {
+            state.onCancel?()
+        } label: {
+            Image(systemName: "xmark")
+                .font(Theme.Typography.menuIcon)
+                .foregroundStyle(Theme.Colors.textSecondary)
+                .frame(
+                    width: Theme.Size.dictationPanelCancel,
+                    height: Theme.Size.dictationPanelCancel)
+                .background(hovered ? Theme.Colors.controlHover : .clear)
+                .clipShape(Capsule())
         }
+        .buttonStyle(.plain)
+        .onHover { hovered in
+            withAnimation(.easeOut(duration: Theme.Duration.hover)) { self.hovered = hovered }
+        }
+        .accessibilityLabel("Cancel dictation")
+    }
+}
+
+private struct DictationListeningRow: View {
+    let state: DictationDisplayState
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            DictationWaveform(
+                levels: state.levels.enumerated().map { index, level in
+                    let edge = min(1, Float(min(index, state.levels.count - 1 - index)) / 4)
+                    let taper = edge * edge * (3 - 2 * edge)
+                    return level * (0.2 + 0.8 * taper)
+                })
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(Self.elapsed(from: state.startedAt, to: context.date))
+                    .font(Theme.Typography.dictationTimer)
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .frame(minWidth: 36, alignment: .trailing)
+                    .fixedSize()
+            }
+            DictationCancelButton(state: state)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Dictation listening")
+    }
+
+    private static func elapsed(from start: Date, to now: Date) -> String {
+        let seconds = max(0, Int(now.timeIntervalSince(start)))
+        return "\(seconds / 60):\(String(format: "%02d", seconds % 60))"
+    }
+}
+
+private struct DictationTranscribingRow: View {
+    let state: DictationDisplayState
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            Image(systemName: "progress.indicator")
+                .foregroundStyle(Theme.Colors.progress)
+                .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing)
+            Text("Transcribing…")
+                .font(Theme.Typography.rowTrailing)
+                .foregroundStyle(Theme.Colors.textPrimary)
+            DictationCancelButton(state: state)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Transcribing dictation")
     }
 }
 
@@ -56,19 +109,12 @@ private struct DictationPanelView: View {
     var body: some View {
         Group {
             if state.phase == .listening {
-                DictationWaveform(
-                    levels: state.levels.enumerated().map { index, level in
-                        let edge = min(1, Float(min(index, state.levels.count - 1 - index)) / 4)
-                        let taper = edge * edge * (3 - 2 * edge)
-                        return level * (0.2 + 0.8 * taper)
-                    }, processing: false
-                )
-                .accessibilityLabel("Dictation listening")
+                DictationListeningRow(state: state)
             } else {
-                DictationProcessingWave()
-                    .accessibilityLabel("Transcribing dictation")
+                DictationTranscribingRow(state: state)
             }
         }
+        .padding(.horizontal, Theme.Spacing.xl)
         .frame(width: Theme.Size.dictationPanel.width, height: Theme.Size.dictationPanel.height)
         .glassEffect(.regular, in: .capsule)
     }
@@ -123,6 +169,7 @@ final class DictationPanelController {
         panel.onAccept = onAccept
         panel.onCancel = onCancel
         self.panel = panel
+        state.onCancel = onCancel
         let size = Theme.Size.dictationPanel
         panel.setFrameOrigin(
             NSPoint(
@@ -130,6 +177,7 @@ final class DictationPanelController {
                 y: frame.minY + frame.height * 0.1 - size.height / 2))
         state.phase = .listening
         state.levels = [Float](repeating: 0, count: DictationSpectrum.barCount)
+        state.startedAt = Date()
         panel.makeKeyAndOrderFront(nil)
     }
 
