@@ -352,6 +352,10 @@ final class AppSettings {
         didSet { defaults.set(dictationLanguage, forKey: Key.dictationLanguage.rawValue) }
     }
 
+    var dictationChime: Bool {
+        didSet { defaults.set(dictationChime, forKey: Key.dictationChime.rawValue) }
+    }
+
     var notesRendersMarkdown: Bool {
         didSet { defaults.set(notesRendersMarkdown, forKey: Key.notesRendersMarkdown.rawValue) }
     }
@@ -729,6 +733,9 @@ final class AppSettings {
         dictationLanguage =
             defaults.string(forKey: Key.dictationLanguage.rawValue)
             .flatMap(DictationLanguage.init(rawValue:))?.rawValue
+        dictationChime =
+            defaults.object(forKey: Key.dictationChime.rawValue) == nil
+            || defaults.bool(forKey: Key.dictationChime.rawValue)
         notesRendersMarkdown =
             defaults.object(forKey: Key.notesRendersMarkdown.rawValue) == nil
             || defaults.bool(forKey: Key.notesRendersMarkdown.rawValue)

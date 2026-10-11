@@ -11,6 +11,7 @@ final class DictationCoordinator {
     let models: DictationModelStore
     private let capture = DictationCapture()
     private let audioDucker: DictationAudioDucker
+    private let chime: any DictationChiming
     private let panel = DictationPanelController()
     private let injector: TextInjector
     private let showMessage: (String, DialogTone) -> Void
@@ -29,6 +30,7 @@ final class DictationCoordinator {
     init(
         settings: AppSettings, hotKeys: HotKeyManager, models: DictationModelStore,
         injector: TextInjector, audioDucker: DictationAudioDucker,
+        chime: any DictationChiming = DictationChimePlayer(isEnabled: { false }),
         confirmEnable: @escaping () async -> Bool,
         showMessage: @escaping (String, DialogTone) -> Void
     ) {
@@ -37,6 +39,7 @@ final class DictationCoordinator {
         self.models = models
         self.injector = injector
         self.audioDucker = audioDucker
+        self.chime = chime
         self.confirmEnable = confirmEnable
         self.showMessage = showMessage
         panel.onAccept = { [weak self] in self?.accept() }
@@ -141,6 +144,8 @@ final class DictationCoordinator {
         phase = .starting
         finishWhenStarted = false
         self.target = target
+        // Before the ducker and the mic, so the chime plays at full volume and is never captured.
+        chime.playStart()
         audioDucker.begin()
         startTask = Task { [weak self] in
             guard let self else { return }
@@ -173,6 +178,7 @@ final class DictationCoordinator {
         panel.state.phase = .transcribing
         field?.isTranscribing = true
         audioDucker.end()
+        chime.playStop()
         let current = token
         let model = settings.dictationModel
         let language = settings.dictationLanguage
@@ -234,6 +240,9 @@ final class DictationCoordinator {
 
     func cancel() {
         guard phase != .stopping, phase != .idle || !settings.dictationEnabled else { return }
+        // A session that was audible to the user also stops audibly; a cancelled
+        // start never got as far as its chime, so it stays silent.
+        if phase == .listening || phase == .transcribing { chime.playStop() }
         let pendingStart = startTask
         let pendingTranscription = transcriptionTask
         reset()

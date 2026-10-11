@@ -43,11 +43,20 @@ compilation of its 2-bit weights; Ultra's encoder and both variants' decoder/joi
 - The Liquid Glass capsule displays 21 fixed frequency bands driven by the microphone, sampled at
   most 20 times per second through a reused 512-point Accelerate transform on the capture queue.
   Logarithmic bands span 32–5000 Hz so speech sits nearer the middle. Smoothed levels taper and
-  fade only toward the edges, without a center peak or mirroring.
-  Transcription replaces them with a smaller wave whose white center fades to gray, moving left to
-  right at up to 30 frames per second.
-  Reduce Motion pauses the processing timeline; closing the panel releases its hosting view so no
-  animation continues while hidden.
+  fade only toward the edges, without a center peak or mirroring. The listening row shows the
+  waveform, a monospaced elapsed timer restarted on each show, and an always-visible cancel button
+  wired to the same handler as Escape; the timer is informational and keeps ticking under Reduce
+  Motion. Transcription replaces waveform and timer with a spinner and its label; the panel keeps
+  one fixed size across both rows, and the capsule's appearance is the armed signal — the
+  coordinator shows it only after capture has started, so no separate arming state exists.
+  Closing the panel releases its hosting view so no animation continues while hidden.
+- A short chime pair marks dictation's start and finish. The sounds are committed generated assets
+  (`Scripts/gen-dictation-chimes.mjs`), played by a cached `AVAudioPlayer` pair inside the main app;
+  the helper plays nothing. The toggle is read at play time, so a disabled setting or a missing
+  resource is a silent no-op, never an error. The start chime plays before the ducker engages and
+  before capture starts, so the duck never swallows it and the microphone never records it; the
+  stop chime plays after the ducker restores volume. Failures never chime — they report through a
+  dialog — and a start cancelled before listening began stays silent.
 - Dictation fades the default output's software volume down by about 90% from shortcut press, then restores
   it on completion, cancellation and normal quit. An unsupported output is left untouched, as is a
   volume the user changes during capture. Before each fade step, a bundle-ID Application Support
