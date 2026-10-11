@@ -51,6 +51,9 @@ targets:
       # The MIT mark's licence asks the notice to travel with the binary, not just the repo.
       - path: NOTICE.md
         buildPhase: resources
+      # The dictation chimes are committed generated assets (Scripts/gen-dictation-chimes.mjs).
+      - path: Tinycast/Resources/DictationSounds
+        buildPhase: resources
     dependencies:
       - target: DictationHelper
         link: false
