@@ -171,7 +171,11 @@ panel, the shortcut-recorder callout and the Notes switcher, and `menuRow` is de
 `dialogIcon 32` · `hudWidth 200` ·
 `hudHeight 100` · `volumeTrackHeight 6` · `volumeReadout 38`
 
-The opt-in Dictation capsule adds `dictationPanel 144×44`, with 2pt waveform bars separated by 3pt.
+The opt-in Dictation capsule adds `dictationPanel 204×44`, with 2pt waveform bars separated by 3pt.
+Its listening row is waveform · elapsed timer (`dictationTimer`, callout monospaced digits) · a
+cancel button on the `dictationPanelCancel 24` hit target; the transcribing row swaps the waveform
+and timer for a `progress.indicator` spinner and its label. One size serves both rows, so the panel
+never resizes mid-session.
 
 Notes adds `noteWindow 440×180` (opening size on a first run, and the floor), `noteWindowMaxHeight 860`,
 `noteTitlebar 44`, `noteTitleInset 120`, `noteEditorInset 16`, `noteSearchHeight 34`,

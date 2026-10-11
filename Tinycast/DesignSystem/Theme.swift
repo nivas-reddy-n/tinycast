@@ -298,8 +298,10 @@ enum Theme {
         /// Transient volume HUD shown after any volume or mute command.
         static let hudWidth: CGFloat = 200
         static let hudHeight: CGFloat = 100
-        static let dictationPanel = CGSize(width: 144, height: 44)
+        static let dictationPanel = CGSize(width: 204, height: 44)
         static let dictationWaveBar: CGFloat = 2
+        /// The cancel button's square hit target inside the dictation capsule.
+        static let dictationPanelCancel: CGFloat = 24
         /// Read-only volume bar geometry used by the HUD.
         static let volumeTrackHeight: CGFloat = 6
         /// Fixed slot for the level readout, sized to the widest string it ever holds.
@@ -399,6 +401,8 @@ enum Theme {
         static let markdownHeading3 = Font.headline
         static let code = Font.system(.callout, design: .monospaced)
         static let inlineCode = Font.body.monospaced()
+        /// The dictation capsule's elapsed readout; digits hold their width while counting.
+        static let dictationTimer = Font.callout.monospacedDigit()
         static let bar = Font.callout.weight(.medium)
         /// A staged chat attachment's name beside the search text; the NSFont measures the chip.
         static let chip = Font.callout

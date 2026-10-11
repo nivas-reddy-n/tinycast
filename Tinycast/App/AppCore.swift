@@ -92,6 +92,7 @@ final class AppCore {
     @ObservationIgnored private(set) lazy var dictationCoordinator = DictationCoordinator(
         settings: settings, hotKeys: hotKeys, models: dictationModels, injector: textInjector,
         audioDucker: dictationAudioDucker,
+        chime: DictationChimePlayer(isEnabled: { [unowned self] in settings.dictationChime }),
         confirmEnable: { [unowned self] in
             await self.confirm(
                 title: "Enable Dictation?",

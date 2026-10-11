@@ -340,7 +340,8 @@ enum SettingsSearchCatalog {
         .init(.dictationMemory, "Release model from memory"),
         .init(.dictationOutput, "Microphone"),
         .init(.dictationOutput, "When finished"),
-        .init(.dictationOutput, "Adapt capitalization", keywords: ["uppercase", "lowercase", "sentence"])
+        .init(.dictationOutput, "Adapt capitalization", keywords: ["uppercase", "lowercase", "sentence"]),
+        .init(.dictationOutput, "Start and finish sounds", keywords: ["chime", "sound", "audio"])
     ]
 
     private static let fileSearch: [SettingsSearchEntry] = [

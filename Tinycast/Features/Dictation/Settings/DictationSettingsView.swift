@@ -168,6 +168,10 @@ struct DictationSettingsView: View {
                         SettingsRowTitle(.dictationOutput, "Adapt capitalization")
                         Text("Match the first letter to the text before the cursor.")
                     }
+                    Toggle(isOn: $settings.dictationChime) {
+                        SettingsRowTitle(.dictationOutput, "Start and finish sounds")
+                        Text("Play a short chime when dictation starts and finishes.")
+                    }
                 } header: {
                     SettingsSectionHeader(.dictationOutput)
                 } footer: {

@@ -12,6 +12,7 @@ struct DictationFieldTest {
         try await testWindowClose()
         try await testQueuedCancellation(closing: false)
         try await testQueuedCancellation(closing: true)
+        try await testChimes()
         print("ALL PASSED")
     }
 
@@ -128,6 +129,32 @@ struct DictationFieldTest {
         expect(fixture.messages.isEmpty, "Discarding queued speech is silent")
     }
 
+    private static func testChimes() async throws {
+        let fixture = Fixture()
+        let editor = ComposerTextView()
+        try await fixture.start(into: editor)
+        expect(fixture.chime.starts == 1, "A session reaching listening chimes once")
+        expect(fixture.chime.stops == 0, "Listening alone plays no stop chime")
+        fixture.coordinator.accept()
+        try await wait { fixture.models.pending != nil }
+        expect(fixture.chime.stops == 1, "Accepting plays the stop chime")
+        fixture.models.finish("Spoken words")
+        try await wait { fixture.coordinator.field == nil }
+        expect(fixture.chime.stops == 1, "Delivery plays no further chime")
+
+        try await fixture.start(into: editor)
+        fixture.coordinator.cancel(in: editor)
+        try await wait { !fixture.capture.isRecording }
+        expect(fixture.chime.stops == 2, "Cancelling a live recording chimes stop")
+
+        // A start that never reached listening stays silent: no chime, then none on cancel.
+        let before = fixture.chime.starts
+        fixture.coordinator.cancel(in: editor)
+        try await wait { !fixture.capture.isRecording }
+        expect(fixture.chime.starts == before, "A cancelled start never chimes")
+        expect(fixture.chime.stops == 2, "A cancelled start plays no stop chime")
+    }
+
     private static func wait(until condition: () -> Bool) async throws {
         let deadline = ContinuousClock.now + .seconds(2)
         while !condition() {
@@ -146,12 +173,13 @@ struct DictationFieldTest {
         let settings = AppSettings()
         let models = DictationModelStore()
         let queue = DeliveryQueue()
+        let chime = ChimeStub()
         var messages: [String] = []
         lazy var coordinator = DictationCoordinator(
             settings: settings, hotKeys: HotKeyManager(), models: models,
             injector: TextInjector(
                 clipboardManager: ClipboardManager(), settings: settings, deliveryQueue: queue),
-            audioDucker: DictationAudioDucker(), confirmEnable: { false },
+            audioDucker: DictationAudioDucker(), chime: chime, confirmEnable: { false },
             showMessage: { [weak self] message, _ in self?.messages.append(message) })
 
         var capture: DictationCapture { DictationCapture.latest! }
@@ -315,6 +343,14 @@ final class DictationAudioDucker {
     func begin() {}
     func end() {}
     func restoreImmediately() {}
+}
+
+@MainActor
+final class ChimeStub: DictationChiming {
+    var starts = 0
+    var stops = 0
+    func playStart() { starts += 1 }
+    func playStop() { stops += 1 }
 }
 
 @MainActor
